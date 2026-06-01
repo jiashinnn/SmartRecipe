@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { 
-  ChefHat, Trash2, ArrowRight, ClipboardList, 
-  CheckCircle, ShoppingBag, ListChecks, Sparkles, X 
+import {
+  ChefHat, Trash2, ArrowRight, ClipboardList,
+  CheckCircle, ShoppingBag, ListChecks, Sparkles, X
 } from 'lucide-react';
 
 interface SavedRecipe {
@@ -58,7 +58,7 @@ export default function RecipesPage() {
 
   const handleDeleteRecipe = async (recipeId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening details modal when deleting
-    
+
     const confirmDelete = window.confirm(t.savedRecipes.deleteConfirm);
     if (!confirmDelete) return;
 
