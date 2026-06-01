@@ -5,19 +5,27 @@
   --foreground: #171717;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Custom Tiffany Green Palette */
+  --color-tiffany-50: #f0fdfc;
+  --color-tiffany-100: #dcfaf8;
+  --color-tiffany-200: #baf3ef;
+  --color-tiffany-300: #85e7e1;
+  --color-tiffany-400: #4ad2ca;
+  --color-tiffany: #0ABAB5;
+  /* Core Tiffany Green  */
+  --color-tiffany-600: #099a95;
+  --color-tiffany-700: #0c7c79;
+  --color-tiffany-800: #106361;
+  --color-tiffany-900: #125251;
+  --color-tiffany-950: #043232;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
   background: var(--background);
