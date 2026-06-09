@@ -48,7 +48,15 @@ export const translations = {
             back: "Back to Pantry",
             regenerate: "Try Another Recipe",
             saveBtn: "Save to My Recipes",
-            savedBtn: "Saved!"
+            savedBtn: "Saved!",
+            selectAll: "Select All",
+            deselectAll: "Deselect All",
+            selectIngredients: "Select ingredients to use:",
+            edit: "Edit",
+            cancel: "Cancel",
+            save: "Save",
+            invalidQty: "Quantity must be greater than 0",
+            generateNew: "Generate New Recipe"
         },
         savedRecipes: {
             title: "My Saved Recipes",
@@ -107,7 +115,15 @@ export const translations = {
             back: "Kembali ke Pantri",
             regenerate: "Cuba Resipi Lain",
             saveBtn: "Simpan ke Resipi Saya",
-            savedBtn: "Telah Disimpan!"
+            savedBtn: "Telah Disimpan!",
+            selectAll: "Pilih Semua",
+            deselectAll: "Nyahpilih Semua",
+            selectIngredients: "Pilih bahan untuk digunakan:",
+            edit: "Edit",
+            cancel: "Batal",
+            save: "Simpan",
+            invalidQty: "Kuantiti mestilah lebih besar daripada 0",
+            generateNew: "Jana Resipi Baru"
         },
         savedRecipes: {
             title: "Resipi Disimpan Saya",
@@ -166,7 +182,15 @@ export const translations = {
             back: "返回我的储藏室",
             regenerate: "换一个菜谱",
             saveBtn: "收藏此菜谱",
-            savedBtn: "已收藏！"
+            savedBtn: "已收藏！",
+            selectAll: "全选",
+            deselectAll: "取消全选",
+            selectIngredients: "选择要使用的食材：",
+            edit: "编辑",
+            cancel: "取消",
+            save: "保存",
+            invalidQty: "数量必须大于0",
+            generateNew: "生成新菜谱"
         },
         savedRecipes: {
             title: "我收藏的菜谱",

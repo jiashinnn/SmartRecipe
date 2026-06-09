@@ -7,7 +7,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   ChefHat, Plus, ClipboardList, Trash2, 
   Sparkles, ShoppingBag, CheckCircle, 
-  ListChecks, ArrowLeft, RefreshCw, AlertCircle, Bookmark, BookmarkCheck 
+  ListChecks, ArrowLeft, RefreshCw, AlertCircle, Bookmark, BookmarkCheck,
+  Pencil, Save, X
 } from 'lucide-react';
 
 interface PantryItem {
@@ -33,9 +34,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [items, setItems] = useState<PantryItem[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   
+  // Inline edit states
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editQuantity, setEditQuantity] = useState<string>('');
+  const [editUnit, setEditUnit] = useState<string>('');
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+
   // AI generation states
   const [generating, setGenerating] = useState(false);
+  const [activeMode, setActiveMode] = useState<'existing' | 'mix' | null>(null);
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -67,6 +77,7 @@ export default function DashboardPage() {
         return;
       } else {
         setItems(data);
+        setSelectedItemIds(data.map(item => item.id));
       }
       setLoading(false);
     };
@@ -79,6 +90,7 @@ export default function DashboardPage() {
     if (!error) {
       const updatedItems = items.filter(item => item.id !== itemId);
       setItems(updatedItems);
+      setSelectedItemIds(prev => prev.filter(id => id !== itemId));
       // If deleted last item, redirect to setup
       if (updatedItems.length === 0) {
         router.push('/setup-pantry');
@@ -86,8 +98,79 @@ export default function DashboardPage() {
     }
   };
 
+  const handleStartEdit = (item: PantryItem) => {
+    setEditingItemId(item.id);
+    setEditName(item.item_name);
+    setEditQuantity(String(item.quantity));
+    setEditUnit(item.unit);
+    setErrorMsg(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setErrorMsg(null);
+  };
+
+  const handleSaveEdit = async (itemId: string) => {
+    if (!editName.trim() || !editQuantity || parseFloat(editQuantity) <= 0) {
+      setErrorMsg(t.dashboard.invalidQty);
+      return;
+    }
+
+    setUpdatingItemId(itemId);
+    setErrorMsg(null);
+    const updatedQty = parseFloat(editQuantity);
+
+    try {
+      const { error } = await supabase
+        .from('pantry_items')
+        .update({
+          item_name: editName.trim(),
+          quantity: updatedQty,
+          unit: editUnit
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      setItems(items.map(item => 
+        item.id === itemId 
+          ? { ...item, item_name: editName.trim(), quantity: updatedQty, unit: editUnit } 
+          : item
+      ));
+      setEditingItemId(null);
+    } catch (err: any) {
+      setErrorMsg(err.message || t.common.error);
+    } finally {
+      setUpdatingItemId(null);
+    }
+  };
+
+  const handleToggleSelect = (itemId: string) => {
+    if (selectedItemIds.includes(itemId)) {
+      setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+    } else {
+      setSelectedItemIds([...selectedItemIds, itemId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    setSelectedItemIds(items.map(item => item.id));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedItemIds([]);
+  };
+
   const handleGenerateRecipe = async (mode: 'existing' | 'mix') => {
+    const selectedIngredients = items.filter(item => selectedItemIds.includes(item.id));
+    if (selectedIngredients.length === 0) {
+      setErrorMsg(t.pantrySetup.errorEmpty);
+      return;
+    }
+
     setGenerating(true);
+    setActiveMode(mode);
     setErrorMsg(null);
     setRecipe(null);
     setRecipeSaved(false);
@@ -99,7 +182,7 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ingredients: items,
+          ingredients: selectedIngredients,
           mode,
           language,
         }),
@@ -278,11 +361,15 @@ export default function DashboardPage() {
 
         {/* Action button */}
         <button
-          onClick={() => setRecipe(null)}
+          onClick={() => {
+            if (activeMode) {
+              handleGenerateRecipe(activeMode);
+            }
+          }}
           className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-tiffany hover:bg-tiffany-600 text-white font-extrabold text-base transition-all active:scale-98 cursor-pointer shadow-lg shadow-tiffany/10"
         >
           <RefreshCw className="h-5 w-5" />
-          <span>{t.dashboard.regenerate}</span>
+          <span>{t.dashboard.generateNew}</span>
         </button>
       </div>
     );
@@ -330,9 +417,18 @@ export default function DashboardPage() {
         {/* Mode 1: Use Existing Only */}
         <button
           onClick={() => handleGenerateRecipe('existing')}
-          className="flex flex-col text-left p-6 sm:p-8 bg-white border-2 border-gray-150 hover:border-tiffany rounded-3xl transition-all hover:shadow-xl active:scale-98 cursor-pointer group"
+          disabled={selectedItemIds.length === 0}
+          className={`flex flex-col text-left p-6 sm:p-8 bg-white border-2 rounded-3xl transition-all ${
+            selectedItemIds.length === 0
+              ? 'border-gray-150 opacity-50 cursor-not-allowed'
+              : 'border-gray-150 hover:border-tiffany hover:shadow-xl active:scale-98 cursor-pointer group'
+          }`}
         >
-          <span className="p-3 rounded-2xl bg-tiffany/10 text-tiffany mb-6 group-hover:bg-tiffany group-hover:text-white transition-colors duration-300">
+          <span className={`p-3 rounded-2xl mb-6 transition-colors duration-300 ${
+            selectedItemIds.length === 0 
+              ? 'bg-gray-100 text-gray-400' 
+              : 'bg-tiffany/10 text-tiffany group-hover:bg-tiffany group-hover:text-white'
+          }`}>
             <CheckCircle className="h-7 w-7" />
           </span>
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{t.dashboard.useExisting}</h3>
@@ -342,9 +438,18 @@ export default function DashboardPage() {
         {/* Mode 2: Mix Mode */}
         <button
           onClick={() => handleGenerateRecipe('mix')}
-          className="flex flex-col text-left p-6 sm:p-8 bg-white border-2 border-gray-150 hover:border-tiffany rounded-3xl transition-all hover:shadow-xl active:scale-98 cursor-pointer group"
+          disabled={selectedItemIds.length === 0}
+          className={`flex flex-col text-left p-6 sm:p-8 bg-white border-2 rounded-3xl transition-all ${
+            selectedItemIds.length === 0
+              ? 'border-gray-150 opacity-50 cursor-not-allowed'
+              : 'border-gray-150 hover:border-tiffany hover:shadow-xl active:scale-98 cursor-pointer group'
+          }`}
         >
-          <span className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 mb-6 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+          <span className={`p-3 rounded-2xl mb-6 transition-colors duration-300 ${
+            selectedItemIds.length === 0 
+              ? 'bg-gray-100 text-gray-400' 
+              : 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white'
+          }`}>
             <ShoppingBag className="h-7 w-7" />
           </span>
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">{t.dashboard.mixMode}</h3>
@@ -370,28 +475,157 @@ export default function DashboardPage() {
           </button>
         </div>
 
+        {/* Ingredient Selection Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50 border border-gray-100 rounded-2xl p-4 mb-6">
+          <p className="text-xs sm:text-sm font-bold text-gray-600">
+            {t.dashboard.selectIngredients}{' '}
+            <span className="text-tiffany font-extrabold">
+              ({selectedItemIds.length} / {items.length} chosen)
+            </span>
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSelectAll}
+              className="text-xs font-bold text-tiffany hover:text-tiffany-600 transition-colors cursor-pointer"
+            >
+              {t.dashboard.selectAll}
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={handleDeselectAll}
+              className="text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+            >
+              {t.dashboard.deselectAll}
+            </button>
+          </div>
+        </div>
+
         {/* Inventory Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex justify-between items-center p-4 bg-gray-50 border border-gray-150 hover:border-tiffany-100 hover:bg-tiffany-50/20 rounded-2xl transition-all"
-            >
-              <div>
-                <h3 className="font-bold text-gray-800 text-sm sm:text-base">{item.item_name}</h3>
-                <p className="text-xs text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
-                  {item.quantity} {t.pantrySetup.units[item.unit as keyof typeof t.pantrySetup.units] || item.unit}
-                </p>
-              </div>
-              <button
-                onClick={() => handleDeleteItem(item.id)}
-                className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-white hover:border-red-150 transition-all cursor-pointer"
-                title="Delete item"
+          {items.map((item) => {
+            if (editingItemId === item.id) {
+              return (
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-3 p-4 bg-white border border-tiffany rounded-2xl shadow-sm transition-all animate-in fade-in zoom-in-95 duration-150"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                        {t.pantrySetup.itemName}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full text-sm py-2 px-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-tiffany focus:bg-white outline-none transition-all"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                          {t.pantrySetup.quantity}
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="0.01"
+                          step="any"
+                          value={editQuantity}
+                          onChange={(e) => setEditQuantity(e.target.value)}
+                          className="w-full text-sm py-2 px-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-tiffany focus:bg-white outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                          {t.pantrySetup.unit}
+                        </label>
+                        <select
+                          value={editUnit}
+                          onChange={(e) => setEditUnit(e.target.value)}
+                          className="w-full text-sm py-2 px-2 bg-gray-50 rounded-xl border border-gray-200 focus:border-tiffany focus:bg-white outline-none appearance-none cursor-pointer"
+                          style={{ backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'m6 8 4 4 4-4\'/%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundSize: '1rem', backgroundRepeat: 'no-repeat' }}
+                        >
+                          <option value="pieces">{t.pantrySetup.units.pieces}</option>
+                          <option value="grams">{t.pantrySetup.units.grams}</option>
+                          <option value="ml">{t.pantrySetup.units.ml}</option>
+                          <option value="tbsp">{t.pantrySetup.units.tbsp}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="px-3.5 py-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      {t.dashboard.cancel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEdit(item.id)}
+                      disabled={updatingItemId === item.id}
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-tiffany text-white hover:bg-tiffany-600 disabled:opacity-50 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      {updatingItemId === item.id ? (
+                        <span>{t.pantrySetup.saving}</span>
+                      ) : (
+                        <>
+                          <Save className="h-3.5 w-3.5" />
+                          <span>{t.dashboard.save}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            const isSelected = selectedItemIds.includes(item.id);
+            return (
+              <div
+                key={item.id}
+                className={`flex justify-between items-center p-4 bg-gray-50 border rounded-2xl transition-all ${
+                  isSelected 
+                    ? 'border-tiffany bg-tiffany/5 shadow-xs' 
+                    : 'border-gray-150 opacity-85 hover:opacity-100'
+                }`}
               >
-                <Trash2 className="h-4.5 w-4.5" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => handleToggleSelect(item.id)}
+                    className="h-4.5 w-4.5 rounded border-gray-300 text-tiffany focus:ring-tiffany cursor-pointer accent-tiffany"
+                  />
+                  <div className="cursor-pointer" onClick={() => handleToggleSelect(item.id)}>
+                    <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-tight">{item.item_name}</h3>
+                    <p className="text-xs text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                      {item.quantity} {t.pantrySetup.units[item.unit as keyof typeof t.pantrySetup.units] || item.unit}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleStartEdit(item)}
+                    className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-tiffany hover:bg-white hover:border-tiffany transition-all cursor-pointer"
+                    title="Edit item"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-white hover:border-red-150 transition-all cursor-pointer"
+                    title="Delete item"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

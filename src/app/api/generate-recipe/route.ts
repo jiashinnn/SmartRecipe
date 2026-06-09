@@ -15,22 +15,23 @@ export async function POST(request: Request) {
     const langName = language === 'zh' ? 'Simplified Chinese (简体中文)' : language === 'ms' ? 'Bahasa Melayu' : 'English';
 
     const prompt = `
-You are a culinary assistant specializing in Malaysian cuisine (Malay, Chinese, Indian). The user has provided their current ingredients. Based on their chosen mode, generate a recipe.
+You are a culinary assistant specializing in Malaysian cuisine (Malay, Chinese, Indian). The user has selected a list of ingredients they would like to use from their pantry. Based on their chosen mode, generate a recipe.
 
-Ingredients they currently have:
+Ingredients they selected to use:
 ${ingredients.map((item: any) => `- ${item.item_name} (${item.quantity} ${item.unit})`).join('\n')}
 
-Chosen Mode: ${mode === 'existing' ? 'Use Existing Only (Strictly use ONLY ingredients they currently have)' : 'Mix (Use Existing + Need to Buy. You can add a few highly essential ingredients that they need to buy)'}.
+Chosen Mode: ${mode === 'existing' ? 'Use Existing Only (Strictly use ONLY ingredients from their selected list)' : 'Mix (Use Existing + Need to Buy. You can use their selected ingredients and add a few highly essential ingredients that they need to buy)'}.
 
 Requirements:
 1. The recipe must be heavily inspired by authentic Malaysian cuisine.
-2. The instructions must be in ${langName}.
-3. The response must be a valid JSON object matching the requested schema.
+2. The recipe must be culinary-sound and reasonable (合理). You DO NOT need to use all of the selected ingredients in the recipe. Choose only the subset of selected ingredients that make sense together culinary-wise. Do not force-include ingredients that do not fit the dish profile (e.g., do not put unrelated ingredients in the same dish).
+3. The instructions must be in ${langName}.
+4. The response must be a valid JSON object matching the requested schema.
 
 JSON Output Schema:
 {
   "recipeName": "Name of the recipe in ${langName}",
-  "ingredientsToUse": ["Array of ingredients they already have that are used in this recipe"],
+  "ingredientsToUse": ["Array of ingredients from their selected list that are actually used in this recipe"],
   "ingredientsToBuy": ["Array of ingredients to buy (MUST be an empty array if Mode is Use Existing Only)"],
   "prepSteps": ["Beginner-friendly prep steps (e.g., washing, chopping sizes, measuring, marinating time)"],
   "cookingSteps": ["Step-by-step cooking steps from heat setup to plating"]
