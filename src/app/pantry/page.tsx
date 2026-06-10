@@ -111,9 +111,6 @@ export default function PantryPage() {
     <div className="max-w-3xl mx-auto py-4 sm:py-8">
       {/* Title Header */}
       <div className="text-center mb-8 px-4">
-        <span className="inline-flex p-3 rounded-2xl bg-tiffany/10 text-tiffany mb-3">
-          <ChefHat className="h-8 w-8" />
-        </span>
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-2">
           {t.pantrySetup.title}
         </h1>

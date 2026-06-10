@@ -25,8 +25,9 @@ Chosen Mode: ${mode === 'existing' ? 'Use Existing Only (Strictly use ONLY ingre
 Requirements:
 1. The recipe must be heavily inspired by authentic Malaysian cuisine.
 2. The recipe must be culinary-sound and reasonable (合理). You DO NOT need to use all of the selected ingredients in the recipe. Choose only the subset of selected ingredients that make sense together culinary-wise. Do not force-include ingredients that do not fit the dish profile (e.g., do not put unrelated ingredients in the same dish).
-3. The instructions must be in ${langName}.
-4. The response must be a valid JSON object matching the requested schema.
+3. You must generate exactly ONE single, cohesive dish/recipe (do not combine multiple distinct dishes, combo meals, or set menus in the response).
+4. The instructions must be in ${langName}.
+5. The response must be a valid JSON object matching the requested schema.
 
 JSON Output Schema:
 {

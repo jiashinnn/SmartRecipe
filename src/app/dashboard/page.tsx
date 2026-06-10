@@ -424,7 +424,7 @@ export default function DashboardPage() {
               : 'border-gray-150 hover:border-tiffany hover:shadow-xl active:scale-98 cursor-pointer group'
           }`}
         >
-          <span className={`p-3 rounded-2xl mb-6 transition-colors duration-300 ${
+          <span className={`p-3 rounded-2xl mb-6 self-start transition-colors duration-300 ${
             selectedItemIds.length === 0 
               ? 'bg-gray-100 text-gray-400' 
               : 'bg-tiffany/10 text-tiffany group-hover:bg-tiffany group-hover:text-white'
@@ -445,7 +445,7 @@ export default function DashboardPage() {
               : 'border-gray-150 hover:border-tiffany hover:shadow-xl active:scale-98 cursor-pointer group'
           }`}
         >
-          <span className={`p-3 rounded-2xl mb-6 transition-colors duration-300 ${
+          <span className={`p-3 rounded-2xl mb-6 self-start transition-colors duration-300 ${
             selectedItemIds.length === 0 
               ? 'bg-gray-100 text-gray-400' 
               : 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white'
@@ -587,27 +587,20 @@ export default function DashboardPage() {
             return (
               <div
                 key={item.id}
-                className={`flex justify-between items-center p-4 bg-gray-50 border rounded-2xl transition-all ${
+                onClick={() => handleToggleSelect(item.id)}
+                className={`flex justify-between items-center p-4 rounded-2xl transition-all border-2 cursor-pointer ${
                   isSelected 
                     ? 'border-tiffany bg-tiffany/5 shadow-xs' 
-                    : 'border-gray-150 opacity-85 hover:opacity-100'
+                    : 'border-transparent bg-gray-50/85 hover:bg-gray-100/50'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => handleToggleSelect(item.id)}
-                    className="h-4.5 w-4.5 rounded border-gray-300 text-tiffany focus:ring-tiffany cursor-pointer accent-tiffany"
-                  />
-                  <div className="cursor-pointer" onClick={() => handleToggleSelect(item.id)}>
-                    <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-tight">{item.item_name}</h3>
-                    <p className="text-xs text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
-                      {item.quantity} {t.pantrySetup.units[item.unit as keyof typeof t.pantrySetup.units] || item.unit}
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-tight">{item.item_name}</h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    {item.quantity} {t.pantrySetup.units[item.unit as keyof typeof t.pantrySetup.units] || item.unit}
+                  </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleStartEdit(item)}
                     className="p-2 rounded-xl border border-gray-200 text-gray-400 hover:text-tiffany hover:bg-white hover:border-tiffany transition-all cursor-pointer"
